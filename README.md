@@ -19,11 +19,14 @@ It allows you to develop in an isolated environment, outside of the core Isaac L
 
 - Clone or copy this project/repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
 
+- Source: `source .~/Projects/IsaacSim/_build/linux-x86_64/release/setup_conda_env.sh`
+
 - Using a python interpreter that has Isaac Lab installed, install the library in editable mode using:
 
     ```bash
     # use 'PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
     python -m pip install -e source/arm_lib
+    
 
 - Verify that the extension is correctly installed by:
 
@@ -34,7 +37,8 @@ It allows you to develop in an isolated environment, outside of the core Isaac L
 
         ```bash
         # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-        python scripts/list_envs.py
+        # python scripts/list_envs.py
+        ~/Projects/IsaacLab/isaaclab.sh -p scripts/list_envs.py
         ```
 
     - Running a task:
