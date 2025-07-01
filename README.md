@@ -2,17 +2,42 @@
 
 ## Overview
 
-This project/repository serves as a template for building projects or extensions based on Isaac Lab.
-It allows you to develop in an isolated environment, outside of the core Isaac Lab repository.
+Templated Isaac Lab Project.
 
-Example setup: https://github.com/MuammerBay/IsaacLab-SO_100/blob/main/source/SO_100/SO_100/tasks/manager_based/so_100/so_100_cube_lift_env_cfg.py
+[Example setup](https://github.com/MuammerBay/IsaacLab-arm_lib/blob/main/source/arm_lib/arm_lib/tasks/manager_based/arm_lib/arm_lib_cube_lift_env_cfg.py)
 
-**Key Features:**
 
-- `Isolation` Work outside the core Isaac Lab repository, ensuring that your development efforts remain self-contained.
-- `Flexibility` This template is set up to allow your code to be run as an extension in Omniverse.
+## File Structure
 
-**Keywords:** extension, template, isaaclab
+The file structure is a little funny. It's mostly auto-generated from the Isaac Lab install script and is meant to match the structure of Isaac Lab itself. For ease of use, I've outlined the relevant modifiable files, along with additional created files for organizational purposes.
+
+I'm using a Franka Panda for this project.
+
+```cfg
+scripts/
+└── rsl_rl/
+|   ├── train.py                                     # Training code
+|   └── play.py                                      # Evaluation code
+source/
+└── arm_lib/
+    └── arm_lib/
+        └── tasks/
+            └── manager_based/
+                └── arm_lib/
+                    ├── asset/
+                    │   └── arm_lib.usd              # Custom robot (optional)
+                    │
+                    ├── agents/
+                    │   └── rsl_rl_ppo_cfg.py        # Hyperparameters
+                    │
+                    ├── mdp/
+                    │   ├── rewards.py               # Rewards
+                    │   └── terminations.py          # End conditions
+                    │
+                    ├── arm_lib_base_env_cfg.py      # Curriculum & Integration
+                    ├── arm_lib_cube_lift_env_cfg.py # World & Assets
+                    └── arm_lib_robot_cfg.py         # Robot
+```
 
 ## Installation
 
@@ -66,6 +91,14 @@ Example setup: https://github.com/MuammerBay/IsaacLab-SO_100/blob/main/source/SO
             # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
             python scripts/random_agent.py --task=<TASK_NAME>
             ```
+
+### git
+
+```
+git remote add <remote_name> <remote_url>
+
+git push --set-upstream <remote_name> <branch_name>
+```
 
 ### Set up IDE (Optional)
 
