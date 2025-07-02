@@ -16,12 +16,20 @@ from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import RewardTermCfg as RewTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
-from isaaclab.utils.configclass import configclass
 from isaaclab.sensors import ContactSensorCfg
+from isaaclab.utils.configclass import configclass
 
+# Direct imports for standard MDP terms from Isaac Lab
+from isaaclab.envs.mdp import actions as mdp_actions
+from isaaclab.envs.mdp import commands as mdp_commands
+from isaaclab.envs.mdp import observations as mdp_observations
+from isaaclab.envs.mdp import terminations as mdp_terminations
+
+# Local import for custom-defined rewards and terminations
 from . import mdp
+
 from .arm_lib_reach_env import FrankaSceneCfg
-from sim_agnostic_core.curriculum_core import CurriculumConfig
+from .curriculum_core import CurriculumConfig
 
 ##
 # MDP settings
@@ -32,8 +40,7 @@ from sim_agnostic_core.curriculum_core import CurriculumConfig
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    # Corrected line: 'joint_names_expr' is changed to 'joint_names'
-    arm_action = mdp.JointEffortActionCfg(asset_name="robot", joint_names=["panda_joint[1-7]"], scale=1.0)
+    arm_action = mdp_actions.JointEffortActionCfg(asset_name="robot", joint_names=["panda_joint[1-7]"], scale=1.0)
 
 
 @configclass
@@ -44,12 +51,11 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint.*"])})
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint.*"])})
-        ee_pos = ObsTerm(func=mdp.body_pos, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
-        ee_quat = ObsTerm(func=mdp.body_quat, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
-        relative_target_pos = ObsTerm(func=mdp.generated_commands, params={"command_name": "target_pose"})
-        actions = ObsTerm(func=mdp.last_action)
+        joint_pos = ObsTerm(func=mdp_observations.joint_pos_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])})
+        joint_vel = ObsTerm(func=mdp_observations.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])})
+        ee_pose = ObsTerm(func=mdp_observations.body_pose_w, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
+        relative_target_pos = ObsTerm(func=mdp_observations.generated_commands, params={"command_name": "target_pose"})
+        actions = ObsTerm(func=mdp_observations.last_action)
 
         def __post_init__(self) -> None:
             self.enable_corruption = False
@@ -76,10 +82,11 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target")},
     )
 
+    # MODIFIED: Replaced 'joint_names_expr' with an explicit list for 'joint_names'
     joint_limit_penalty = RewTerm(
         func=mdp.rewards.joint_limit_penalty,
         weight=-5.0,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint[1-7]"])},
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])},
     )
 
     collision_penalty = RewTerm(
@@ -88,10 +95,13 @@ class RewardsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_sensor")},
     )
 
-    action_penalty = RewTerm(func=mdp.rewards.action_smoothness_penalty, weight=0.0)  # Weight updated by curriculum
-    accel_penalty = RewTerm(func=mdp.rewards.acceleration_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint[1-7]"])})
-    jerk_penalty = RewTerm(func=mdp.rewards.jerk_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint[1-7]"])})
-    joint_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names_expr=["panda_joint[1-7]"]), "is_ee": False})
+    action_penalty = RewTerm(func=mdp.rewards.action_smoothness_penalty, weight=0.0)
+
+    # MODIFIED: Replaced 'joint_names_expr' with an explicit list for 'joint_names'
+    accel_penalty = RewTerm(func=mdp.rewards.acceleration_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
+    jerk_penalty = RewTerm(func=mdp.rewards.jerk_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
+    joint_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"]), "is_ee": False})
+
     ee_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "is_ee": True})
     upright_bonus = RewTerm(func=mdp.rewards.upright_bonus, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
 
@@ -100,7 +110,7 @@ class RewardsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    time_out = DoneTerm(func=mdp_terminations.time_out, time_out=True)
 
     successful_reach = DoneTerm(
         func=mdp.terminations.terminate_on_success,
@@ -114,6 +124,7 @@ class TerminationsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_sensor")},
     )
 
+
 ##
 # Environment configuration
 ##
@@ -121,35 +132,27 @@ class TerminationsCfg:
 
 @configclass
 class ArmLibEnvCfg(ManagerBasedRLEnvCfg):
+    """Configuration for the Franka arm environment."""
+
     # Scene settings
-    scene: FrankaSceneCfg = FrankaSceneCfg(num_envs=1024, env_spacing=2.5)
+    scene: FrankaSceneCfg = FrankaSceneCfg(num_envs=4096, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
     events: EventCfg = EventCfg()
-    # MDP settings
+    # Play settings
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
+    # curriculum: CurriculumCfg = CurriculumCfg()
 
-    # Curriculum settings
-    randomize_shelf_config: bool = True
-    threshold_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=0.05, end_value=0.005, start_metric_val=0.5, end_metric_val=0.84))
-    joint_velocity_penalty_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=0.0, end_value=0.5, start_metric_val=0.85, end_metric_val=0.95))
-    ee_velocity_penalty_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=0.0, end_value=0.5, start_metric_val=0.85, end_metric_val=0.95))
-    action_penalty_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=1.0e-4, end_value=1.0e-3, start_metric_val=0.0, end_metric_val=0.2))
-    accel_penalty_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=0.0, end_value=1.0e-6, start_metric_val=0.4, end_metric_val=0.6))
-    jerk_penalty_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=0.0, end_value=1.0e-12, start_metric_val=0.7, end_metric_val=0.8))
-    upright_bonus_curriculum: CurriculumConfig = field(default_factory=lambda: CurriculumConfig(start_value=1.0, end_value=0.0, start_metric_val=0.0, end_metric_val=0.4))
-
-    # Post initialization
-    def __post_init__(self) -> None:
-        """Post initialization."""
+    def __post_init__(self):
+        """Post-initialization checks."""
         # general settings
         self.decimation = 2
-        self.episode_length_s = 10.0
-        # viewer settings
-        self.viewer.eye = (2.5, 2.5, 2.5)
-        self.viewer.lookat = (0.0, 0.0, 0.5)
+        self.episode_length_s = 5
         # simulation settings
-        self.sim.dt = 1 / 120
-        self.sim.render_interval = self.decimation
+        self.sim.dt = 1 / 120.0
+        # self.sim.render_interval = self.decimation
+        # update viewer
+        self.viewer.eye = (3.0, 3.0, 3.0)
+        self.viewer.lookat = (0.0, 0.0, 1.0)

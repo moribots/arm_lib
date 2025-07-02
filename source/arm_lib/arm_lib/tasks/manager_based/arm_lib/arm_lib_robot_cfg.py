@@ -15,7 +15,7 @@ from isaaclab.actuators import ImplicitActuatorCfg
 FRANKA_PANDA_CFG = ArticulationCfg(
     prim_path="{ENV_REGEX_NS}/Robot",
     spawn=sim_utils.UsdFileCfg(
-        usd_path="path/to/your/franka/panda.usd",  # TODO: Update this path
+        usd_path="omniverse://localhost/NVIDIA/Assets/Isaac/2023.1.1/Isaac/Robots/Franka/franka_instanceable.usd",
         activate_contact_sensors=True,  # Enable contact reporting
     ),
     init_state=ArticulationCfg.InitialStateCfg(

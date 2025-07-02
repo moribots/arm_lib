@@ -11,6 +11,7 @@ import numpy as np
 import random
 import math
 from typing import Any
+import importlib
 
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.managers import SceneEntityCfg
@@ -19,7 +20,7 @@ from isaaclab.utils.math import sample_uniform
 from scipy.spatial.transform import Rotation as ScipyRotation
 
 from .arm_lib_env_cfg import ArmLibEnvCfg
-from sim_agnostic_core.curriculum_core import LinearCurriculum
+from .curriculum_core import LinearCurriculum
 
 
 class TaskLogic:
@@ -114,9 +115,22 @@ class FrankaReachEnv(ManagerBasedRLEnv):
     """Custom environment for Franka Reach task that handles curriculum and state history."""
     cfg: ArmLibEnvCfg
 
-    def __init__(self, cfg: ArmLibEnvCfg):
-        super().__init__(cfg)
-        self.task_logic = TaskLogic(self.num_envs, self.cfg.randomize_shelf_config, self.device)
+    # MODIFIED: __init__ now dynamically loads the config from the entry point string.
+    def __init__(self, env_cfg_entry_point: str, **kwargs):
+        # Dynamically load the configuration class
+        module_name, class_name = env_cfg_entry_point.split(":")
+        module = importlib.import_module(module_name)
+        cfg_class = getattr(module, class_name)
+        # Create an instance of the configuration class
+        cfg = cfg_class()
+
+        # Call the parent class constructor with the loaded config
+        super().__init__(cfg=cfg, **kwargs)
+
+        # The 'randomize_shelf_config' attribute is not in the provided cfg.
+        # Using getattr to default to False if it's missing.
+        randomize_shelf_config = getattr(self.cfg, 'randomize_shelf_config', False)
+        self.task_logic = TaskLogic(self.num_envs, randomize_shelf_config, self.device)
         self._init_curriculum()
         self._init_buffers()
 
@@ -126,21 +140,29 @@ class FrankaReachEnv(ManagerBasedRLEnv):
         self.scene.add(self.contact_sensor)
 
     def _init_curriculum(self):
-        self.curricula = {
-            "threshold": LinearCurriculum(self.cfg.threshold_curriculum),
-            "joint_velocity_penalty": LinearCurriculum(self.cfg.joint_velocity_penalty_curriculum),
-            "ee_velocity_penalty": LinearCurriculum(self.cfg.ee_velocity_penalty_curriculum),
-            "action_penalty": LinearCurriculum(self.cfg.action_penalty_curriculum),
-            "accel_penalty": LinearCurriculum(self.cfg.accel_penalty_curriculum),
-            "jerk_penalty": LinearCurriculum(self.cfg.jerk_penalty_curriculum),
-            "upright_bonus": LinearCurriculum(self.cfg.upright_bonus_curriculum),
+        self.curricula = {}
+        # The following curriculum configs are not in the provided cfg. Using getattr to avoid errors.
+        curriculum_configs = {
+            "threshold": "threshold_curriculum",
+            "joint_velocity_penalty": "joint_velocity_penalty_curriculum",
+            "ee_velocity_penalty": "ee_velocity_penalty_curriculum",
+            "action_penalty": "action_penalty_curriculum",
+            "accel_penalty": "accel_penalty_curriculum",
+            "jerk_penalty": "jerk_penalty_curriculum",
+            "upright_bonus": "upright_bonus_curriculum",
         }
+        for name, cfg_attr in curriculum_configs.items():
+            if hasattr(self.cfg, cfg_attr):
+                self.curricula[name] = LinearCurriculum(getattr(self.cfg, cfg_attr))
+
         self.success_buffer = deque(maxlen=100 * self.num_envs)
         self.current_success_rate = 0.0
 
     def _init_buffers(self):
-        self.prev_joint_vel = torch.zeros((self.num_envs, 7), device=self.device)
-        self.prev_joint_accel = torch.zeros((self.num_envs, 7), device=self.device)
+        # Assuming the robot has 7 joints based on previous context.
+        num_joints = 7
+        self.prev_joint_vel = torch.zeros((self.num_envs, num_joints), device=self.device)
+        self.prev_joint_accel = torch.zeros((self.num_envs, num_joints), device=self.device)
 
     def _pre_physics_step(self, actions: torch.Tensor):
         super()._pre_physics_step(actions)
@@ -155,7 +177,7 @@ class FrankaReachEnv(ManagerBasedRLEnv):
         for name, curriculum in self.curricula.items():
             curriculum.update(self.current_success_rate)
             # Update reward term weights
-            if name in self.reward_manager.terms:
+            if hasattr(self, 'reward_manager') and name in self.reward_manager.terms:
                 self.reward_manager.terms[name].weight = curriculum.current_value
 
         self.extras["curriculum/success_rate"] = self.current_success_rate
@@ -169,7 +191,9 @@ class FrankaReachEnv(ManagerBasedRLEnv):
 
     def _reset_task(self, env_ids: torch.Tensor):
         shelf_pos, shelf_rot = self.task_logic.compute_shelf_pose(env_ids)
-        self.scene["shelf"].write_root_pose_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
+        if "shelf" in self.scene:
+            self.scene["shelf"].write_root_pose_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
 
         target_pos = self.task_logic.compute_target_positions(env_ids)
-        self.scene["target"].write_root_position_to_sim(target_pos, env_ids=env_ids)
+        if "target" in self.scene:
+            self.scene["target"].write_root_position_to_sim(target_pos, env_ids=env_ids)
