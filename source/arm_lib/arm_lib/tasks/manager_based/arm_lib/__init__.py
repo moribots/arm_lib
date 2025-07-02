@@ -14,7 +14,7 @@ from . import agents
 
 gym.register(
     id="Template-Arm-Lib-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    entry_point="arm_lib.tasks.manager_based.arm_lib.franka_reach_env:FrankaReachEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": f"{__name__}.arm_lib_env_cfg:ArmLibEnvCfg",
