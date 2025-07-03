@@ -4,19 +4,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-This script defines the configuration for the Franka robot asset.
+This script defines the configuration for the Franka robot asset by loading the standard
+asset from isaaclab_assets and modifying it with custom properties.
 """
 
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg
 from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab_assets.robots.franka import FRANKA_PANDA_CFG as FRANKA_PANDA_DEFAULT_CFG  # isort: skip
 
-# Define the Franka robot configuration
-FRANKA_PANDA_CFG = ArticulationCfg(
+
+# Create the final robot configuration by replacing properties of the standard Franka asset
+FRANKA_PANDA_CFG = FRANKA_PANDA_DEFAULT_CFG.replace(
     prim_path="{ENV_REGEX_NS}/Robot",
+    # Explicitly set activate_contact_sensors to True in the spawn configuration.
+    # We copy the usd_path from the default config to avoid having to specify it manually.
     spawn=sim_utils.UsdFileCfg(
-        usd_path="omniverse://localhost/NVIDIA/Assets/Isaac/2023.1.1/Isaac/Robots/Franka/franka_instanceable.usd",
-        activate_contact_sensors=True,  # Enable contact reporting
+        usd_path=FRANKA_PANDA_DEFAULT_CFG.spawn.usd_path,
+        activate_contact_sensors=True,
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={

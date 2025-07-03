@@ -39,6 +39,8 @@ class FrankaSceneCfg(InteractiveSceneCfg):
             size=(0.5, 0.4, 0.25),
             visual_material=materials.PreviewSurfaceCfg(diffuse_color=(0.3, 0.3, 0.3)),
             collision_props=schemas.CollisionPropertiesCfg(),
+            # MODIFIED: Added rigid_props to the CuboidCfg spawner, which is the correct location.
+            rigid_props=schemas.RigidBodyPropertiesCfg(),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(0.5, 0.0, 0.5)),
     )

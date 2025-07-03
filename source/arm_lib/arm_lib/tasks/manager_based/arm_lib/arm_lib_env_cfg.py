@@ -82,7 +82,6 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target")},
     )
 
-    # MODIFIED: Replaced 'joint_names_expr' with an explicit list for 'joint_names'
     joint_limit_penalty = RewTerm(
         func=mdp.rewards.joint_limit_penalty,
         weight=-5.0,
@@ -97,7 +96,6 @@ class RewardsCfg:
 
     action_penalty = RewTerm(func=mdp.rewards.action_smoothness_penalty, weight=0.0)
 
-    # MODIFIED: Replaced 'joint_names_expr' with an explicit list for 'joint_names'
     accel_penalty = RewTerm(func=mdp.rewards.acceleration_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
     jerk_penalty = RewTerm(func=mdp.rewards.jerk_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
     joint_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"]), "is_ee": False})

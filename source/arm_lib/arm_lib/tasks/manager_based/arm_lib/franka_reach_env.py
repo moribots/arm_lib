@@ -115,7 +115,6 @@ class FrankaReachEnv(ManagerBasedRLEnv):
     """Custom environment for Franka Reach task that handles curriculum and state history."""
     cfg: ArmLibEnvCfg
 
-    # MODIFIED: __init__ now dynamically loads the config from the entry point string.
     def __init__(self, env_cfg_entry_point: str, **kwargs):
         # Dynamically load the configuration class
         module_name, class_name = env_cfg_entry_point.split(":")
