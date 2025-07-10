@@ -24,6 +24,7 @@ from isaaclab.envs.mdp import actions as mdp_actions
 from isaaclab.envs.mdp import commands as mdp_commands
 from isaaclab.envs.mdp import observations as mdp_observations
 from isaaclab.envs.mdp import terminations as mdp_terminations
+from isaaclab.envs.mdp import events as mdp_events
 
 # Local import for custom-defined rewards and terminations
 from . import mdp
@@ -67,7 +68,7 @@ class ObservationsCfg:
         joint_vel = ObsTerm(func=mdp_observations.joint_vel_rel, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])})
         ee_pose = ObsTerm(func=mdp_observations.body_pose_w, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
         relative_target_pos = ObsTerm(func=mdp_observations.generated_commands, params={"command_name": "target_pose"})
-        actions = ObsTerm(func=mdp_observations.last_action)
+        actions = ObsTerm(func=mdp_observations.last_action, params={"action_name": "arm_action"})
 
         def __post_init__(self) -> None:
             self.enable_corruption = False
@@ -80,7 +81,7 @@ class ObservationsCfg:
 @configclass
 class EventCfg:
     """Configuration for events."""
-    pass
+    reset_scene = EventTerm(func=mdp_events.reset_scene_to_default, mode="reset")
 
 
 @configclass
@@ -94,17 +95,21 @@ class RewardsCfg:
     joint_limit_penalty = RewTerm(
         func=mdp.rewards.joint_limit_penalty,
         weight=-5.0,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])},
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])},
     )
     collision_penalty = RewTerm(
         func=mdp.rewards.collision_penalty,
         weight=-20.0,
         params={"sensor_cfg": SceneEntityCfg("contact_sensor")},
     )
-    action_penalty = RewTerm(func=mdp.rewards.action_smoothness_penalty, weight=0.0)
-    accel_penalty = RewTerm(func=mdp.rewards.acceleration_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
-    jerk_penalty = RewTerm(func=mdp.rewards.jerk_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"])})
-    joint_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"]), "is_ee": False})
+    action_penalty = RewTerm(
+        func=mdp.rewards.action_smoothness_penalty,
+        weight=0.0,
+        params={"action_name": "arm_action"}
+    )
+    accel_penalty = RewTerm(func=mdp.rewards.acceleration_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])})
+    jerk_penalty = RewTerm(func=mdp.rewards.jerk_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"])})
+    joint_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", joint_names=["panda_joint.*"]), "is_ee": False})
     ee_velocity_penalty = RewTerm(func=mdp.rewards.velocity_penalty, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "is_ee": True})
     upright_bonus = RewTerm(func=mdp.rewards.upright_bonus, weight=0.0, params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])})
 
@@ -112,15 +117,8 @@ class RewardsCfg:
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
-    time_out = DoneTerm(func=mdp_terminations.time_out, time_out=True)
-    successful_reach = DoneTerm(
-        func=mdp.terminations.terminate_on_success,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target"), "threshold": 0.05},
-    )
-    collision = DoneTerm(
-        func=mdp.terminations.terminate_on_collision,
-        params={"sensor_cfg": SceneEntityCfg("contact_sensor")},
-    )
+    # This class is now empty for debugging purposes.
+    pass
 
 ##
 # Environment configuration

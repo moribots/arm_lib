@@ -52,9 +52,10 @@ def velocity_penalty(env: FrankaReachEnv, asset_cfg: SceneEntityCfg, is_ee: bool
     return torch.linalg.norm(vel, dim=1)
 
 
-def action_smoothness_penalty(env: FrankaReachEnv) -> torch.Tensor:
+def action_smoothness_penalty(env: FrankaReachEnv, action_name: str) -> torch.Tensor:
     """Penalize large changes in actions."""
-    return torch.sum(torch.square(env.action_manager.action), dim=1)
+    action_tensor = env.action_manager.get_action(action_name)
+    return torch.sum(torch.square(action_tensor), dim=1)
 
 
 def acceleration_penalty(env: FrankaReachEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:

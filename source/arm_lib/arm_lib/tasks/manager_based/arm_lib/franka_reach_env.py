@@ -124,9 +124,9 @@ class FrankaReachEnv(ManagerBasedRLEnv):
         module = importlib.import_module(module_name)
         cfg_class = getattr(module, class_name)
         cfg = cfg_class()
-        
+
         super().__init__(cfg=cfg, **kwargs)
-        
+
         randomize_shelf_config = getattr(self.cfg, 'randomize_shelf_config', False)
         self.task_logic = TaskLogic(self.num_envs, randomize_shelf_config, self.device)
         self._init_curriculum()
@@ -194,11 +194,19 @@ class FrankaReachEnv(ManagerBasedRLEnv):
 
     def _reset_task(self, env_ids: torch.Tensor):
         shelf_pos, shelf_rot = self.task_logic.compute_shelf_pose(env_ids)
-        if "shelf" in self.scene:
-             self.scene["shelf"].write_root_pose_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
+
+        try:
+            shelf = self.scene["shelf"]
+            shelf.write_root_pose_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
+        except KeyError:
+            # This will be logged if the "shelf" is not defined in the scene
+            print("WARN: 'shelf' not found in scene, skipping pose update.")
 
         target_pose = self.task_logic.compute_target_poses(env_ids)
-        if "target" in self.scene:
-            self.scene["target"].write_root_pose_to_sim(target_pose, env_ids=env_ids)
+        try:
+            target = self.scene["target"]
+            target.write_root_pose_to_sim(target_pose, env_ids=env_ids)
+        except KeyError:
+            print("WARN: 'target' not found in scene, skipping pose update.")
 
         self.command_manager.update_command("target_pose", target_pose, env_ids=env_ids)
