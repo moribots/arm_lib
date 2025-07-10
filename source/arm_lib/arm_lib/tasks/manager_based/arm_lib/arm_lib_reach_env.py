@@ -37,10 +37,9 @@ class FrankaSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Shelf",
         spawn=sim_utils.CuboidCfg(
             size=(0.5, 0.4, 0.25),
-            collision=True,  # This is the fix
             visual_material=materials.PreviewSurfaceCfg(diffuse_color=(0.3, 0.3, 0.3)),
-            collision_props=schemas.CollisionPropertiesCfg(),
             rigid_props=schemas.RigidBodyPropertiesCfg(),
+            collision_props=schemas.CollisionPropertiesCfg(collision_enabled=True),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(0.5, 0.0, 0.5)),
     )
