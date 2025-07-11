@@ -199,9 +199,16 @@ class FrankaReachEnv(ManagerBasedRLEnv):
     def _reset_task(self, env_ids: torch.Tensor):
         # Sample new poses for the shelf
         shelf_pos, shelf_rot = self.task_logic.compute_shelf_pose(env_ids)
+
+        # Create a zero velocity tensor (3 linear, 3 angular)
+        root_vel = torch.zeros((len(env_ids), 6), device=self.device)
+
+        # Combine pose and velocity into a full 13D state tensor
+        full_state = torch.cat([shelf_pos, shelf_rot, root_vel], dim=1)
+
         # Set the root state of the shelf asset
         shelf = self.scene["shelf"]
-        shelf.write_root_state_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
+        shelf.write_root_state_to_sim(full_state, env_ids=env_ids)
 
         # Sample new poses for the target
         target_pose = self.task_logic.compute_target_poses(env_ids)
