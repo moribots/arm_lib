@@ -13,14 +13,14 @@ if TYPE_CHECKING:
     from ..franka_reach_env import FrankaReachEnv
 
 
-def terminate_on_success(env: FrankaReachEnv, asset_cfg: SceneEntityCfg, threshold: float) -> torch.Tensor:
+def terminate_on_success(env: FrankaReachEnv, asset_cfg: SceneEntityCfg, command_name: str, threshold: float) -> torch.Tensor:
     """Terminate when the end-effector is close to the target."""
     robot: Articulation = env.scene[asset_cfg.name]
     ee_body_idx = robot.find_bodies(asset_cfg.body_names)[0]
 
     ee_pos = robot.data.body_pos_w[:, ee_body_idx]
-    # The target's pose is now correctly retrieved from the command manager.
-    target_pos = env.command_manager.get_command("target_pose")[:, :3]
+    # Get target position from the command manager.
+    target_pos = env.command_manager.get_command(command_name)[:, :3]
 
     dist_to_target = torch.linalg.norm(ee_pos - target_pos, dim=1)
     return dist_to_target < threshold
