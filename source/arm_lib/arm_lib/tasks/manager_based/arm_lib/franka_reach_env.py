@@ -197,15 +197,18 @@ class FrankaReachEnv(ManagerBasedRLEnv):
 
         try:
             shelf = self.scene["shelf"]
-            shelf.write_root_pose_to_sim(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
+            shelf.set_world_pose(pos=shelf_pos, rot=shelf_rot, env_ids=env_ids)
         except KeyError:
             # This will be logged if the "shelf" is not defined in the scene
             print("WARN: 'shelf' not found in scene, skipping pose update.")
 
         target_pose = self.task_logic.compute_target_poses(env_ids)
+        target_pos = target_pose[:, :3]
+        target_rot = target_pose[:, 3:]
+
         try:
             target = self.scene["target"]
-            target.write_root_pose_to_sim(target_pose, env_ids=env_ids)
+            target.set_world_pose(pos=target_pos, rot=target_rot, env_ids=env_ids)
         except KeyError:
             print("WARN: 'target' not found in scene, skipping pose update.")
 
