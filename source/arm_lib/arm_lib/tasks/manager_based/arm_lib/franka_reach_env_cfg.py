@@ -92,7 +92,7 @@ class RewardsCfg:
     distance_to_target = RewTerm(
         func=mdp.rewards.distance_to_target,
         weight=-2.5,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target")},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"])},
     )
     joint_limit_penalty = RewTerm(
         func=mdp.rewards.joint_limit_penalty,
@@ -122,7 +122,7 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp_terminations.time_out, time_out=True)
     successful_reach = DoneTerm(
         func=mdp.terminations.terminate_on_success,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target"), "threshold": 0.05},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "threshold": 0.05},
     )
     collision = DoneTerm(
         func=mdp.terminations.terminate_on_collision,

@@ -118,9 +118,25 @@ class FrankaReachEnv(ManagerBasedRLEnv):
     """Custom environment for Franka Reach task that handles curriculum and state history."""
     cfg: FrankaReachEnvCfg
 
-    def __init__(self, cfg: FrankaReachEnvCfg, **kwargs):
+    def __init__(self, cfg: FrankaReachEnvCfg = None, **kwargs):
+        # If a configuration object is not provided, we attempt to load it from the
+        # entry point specified in the keyword arguments. This makes the environment
+        # more robust to different instantiation patterns.
+        if cfg is None:
+            env_cfg_entry_point = kwargs.pop("env_cfg_entry_point", None)
+            if env_cfg_entry_point is None:
+                raise ValueError("A config object or an entry point must be provided to the environment.")
+
+            # Dynamically load the configuration class from the entry point.
+            module_name, class_name = env_cfg_entry_point.split(":")
+            module = importlib.import_module(module_name)
+            cfg_class = getattr(module, class_name)
+            cfg = cfg_class()
+
+        # Initialize the parent class with the resolved configuration.
         super().__init__(cfg=cfg, **kwargs)
 
+        # Initialize task-specific logic, including curriculum and state buffers.
         randomize_shelf_config = getattr(self.cfg, 'randomize_shelf_config', False)
         self.task_logic = TaskLogic(self.num_envs, randomize_shelf_config, self.device)
         self._init_curriculum()
