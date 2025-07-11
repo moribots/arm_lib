@@ -17,7 +17,7 @@ from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab.utils.math import sample_uniform
 from scipy.spatial.transform import Rotation as ScipyRotation
 
-from .arm_lib_env_cfg import ArmLibEnvCfg
+from .franka_reach_env_cfg import FrankaReachEnvCfg
 from .curriculum_core import LinearCurriculum
 
 
@@ -116,7 +116,7 @@ class TaskLogic:
 
 class FrankaReachEnv(ManagerBasedRLEnv):
     """Custom environment for Franka Reach task that handles curriculum and state history."""
-    cfg: ArmLibEnvCfg
+    cfg: FrankaReachEnvCfg
 
     def __init__(self, env_cfg_entry_point: str, **kwargs):
         # Dynamically load the configuration class

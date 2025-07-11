@@ -18,6 +18,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils.configclass import configclass
 from isaaclab.sensors import ContactSensorCfg
+from isaaclab.markers.config import FRAME_MARKER_CFG
 
 # Direct imports for standard MDP terms from Isaac Lab
 from isaaclab.envs.mdp import actions as mdp_actions
@@ -29,7 +30,7 @@ from isaaclab.envs.mdp import events as mdp_events
 # Local import for custom-defined rewards and terminations
 from . import mdp
 
-from .arm_lib_reach_env import FrankaSceneCfg
+from .franka_reach_scene_cfg import FrankaSceneCfg
 from .curriculum_core import CurriculumConfig
 
 ##
@@ -44,6 +45,7 @@ class CommandsCfg:
         asset_name="robot",
         body_name="panda_hand",
         resampling_time_range=(99.0, 100.0),
+        goal_pose_visualizer_cfg=FRAME_MARKER_CFG.replace(prim_path="{ENV_REGEX_NS}/goal_marker"),
         ranges=mdp_commands.UniformPoseCommandCfg.Ranges(
             pos_x=(0.0, 0.0), pos_y=(0.0, 0.0), pos_z=(0.0, 0.0),
             roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
@@ -117,8 +119,15 @@ class RewardsCfg:
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
-    # This class is now empty for debugging purposes.
-    pass
+    time_out = DoneTerm(func=mdp_terminations.time_out, time_out=True)
+    successful_reach = DoneTerm(
+        func=mdp.terminations.terminate_on_success,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=["panda_hand"]), "target_cfg": SceneEntityCfg("target"), "threshold": 0.05},
+    )
+    collision = DoneTerm(
+        func=mdp.terminations.terminate_on_collision,
+        params={"sensor_cfg": SceneEntityCfg("contact_sensor")},
+    )
 
 ##
 # Environment configuration
@@ -126,7 +135,7 @@ class TerminationsCfg:
 
 
 @configclass
-class ArmLibEnvCfg(ManagerBasedRLEnvCfg):
+class FrankaReachEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the Franka arm environment."""
     scene: FrankaSceneCfg = FrankaSceneCfg(num_envs=1024, env_spacing=2.5)
     commands: CommandsCfg = CommandsCfg()
