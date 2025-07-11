@@ -118,13 +118,7 @@ class FrankaReachEnv(ManagerBasedRLEnv):
     """Custom environment for Franka Reach task that handles curriculum and state history."""
     cfg: FrankaReachEnvCfg
 
-    def __init__(self, env_cfg_entry_point: str, **kwargs):
-        # Dynamically load the configuration class
-        module_name, class_name = env_cfg_entry_point.split(":")
-        module = importlib.import_module(module_name)
-        cfg_class = getattr(module, class_name)
-        cfg = cfg_class()
-
+    def __init__(self, cfg: FrankaReachEnvCfg, **kwargs):
         super().__init__(cfg=cfg, **kwargs)
 
         randomize_shelf_config = getattr(self.cfg, 'randomize_shelf_config', False)
@@ -193,23 +187,13 @@ class FrankaReachEnv(ManagerBasedRLEnv):
             self.prev_joint_accel[env_ids] = 0.
 
     def _reset_task(self, env_ids: torch.Tensor):
+        # Sample new poses for the shelf
         shelf_pos, shelf_rot = self.task_logic.compute_shelf_pose(env_ids)
+        # Set the root state of the shelf asset
+        shelf = self.scene["shelf"]
+        shelf.set_root_state(torch.cat([shelf_pos, shelf_rot], dim=1), env_ids=env_ids)
 
-        try:
-            shelf = self.scene["shelf"]
-            shelf.set_world_pose(pos=shelf_pos, rot=shelf_rot, env_ids=env_ids)
-        except KeyError:
-            # This will be logged if the "shelf" is not defined in the scene
-            print("WARN: 'shelf' not found in scene, skipping pose update.")
-
+        # Sample new poses for the target
         target_pose = self.task_logic.compute_target_poses(env_ids)
-        target_pos = target_pose[:, :3]
-        target_rot = target_pose[:, 3:]
-
-        try:
-            target = self.scene["target"]
-            target.set_world_pose(pos=target_pos, rot=target_rot, env_ids=env_ids)
-        except KeyError:
-            print("WARN: 'target' not found in scene, skipping pose update.")
-
+        # Update the command manager with the new target pose
         self.command_manager.update_command("target_pose", target_pose, env_ids=env_ids)

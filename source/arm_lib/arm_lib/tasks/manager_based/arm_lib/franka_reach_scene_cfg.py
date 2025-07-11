@@ -44,15 +44,6 @@ class FrankaSceneCfg(InteractiveSceneCfg):
         init_state=RigidObjectCfg.InitialStateCfg(pos=(0.5, 0.0, 0.5)),
     )
 
-    # Target (as a non-physical visual object)
-    target = AssetBaseCfg(
-        prim_path="{ENV_REGEX_NS}/Target",
-        spawn=sim_utils.SphereCfg(
-            radius=0.03,
-            visual_material=materials.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0))
-        )
-    )
-
     # Contact sensor
     contact_sensor: ContactSensorCfg = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/panda_link(5|6|7|hand)",
